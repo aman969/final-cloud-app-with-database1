@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 # <HINT> Import any new Models here
-from .models import Course, Enrollment
+from .models import Course, Enrollment, Submission
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -114,9 +114,10 @@ def submit(request, course_id):
     user = request.user
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
-    submission = submission.objects.create(enrollment=enrollment)
+    submission = Submission.objects.create(enrollment=enrollment)
     answers = extract_answers(request)
-    submission.choices.set(answers)
+    print(answers)
+    submission.chocies.set(answers)
     submission.save()
     return HttpResponseRedirect(reverse(
         viewname = 'onlinecourse:show_exam_result',
@@ -140,7 +141,7 @@ def extract_answers(request):
             value = request.POST[key]
             choice_id = int(value)
             submitted_answer.append(choice_id)
-        return submitted_answer
+    return submitted_answer
 
 # <HINT> Create an exam result view to check if learner passed exam and show their question results and result for each question,
 # you may implement it based on the following logic:
@@ -150,13 +151,14 @@ def extract_answers(request):
         # Calculate the total score
 def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, pk=course_id)
-    submission = get_object_or_404(submission, pk=submission_id)
-    choices = submission.choices.all()
+    submission = get_object_or_404(Submission, pk=submission_id)
+    choices = submission.chocies.all()
     total_mark, mark = 0, 0
     for question in course.question_set.all():
         total_mark +=question.grade
         if question.is_get_score(choices):
             mark += question.grade
+    print(total_mark, mark)
     return render(
         request,
         'onlinecourse/exam_result_bootstrap.html',
